@@ -15,19 +15,12 @@ from email.utils import parsedate_to_datetime
 
 KST = timezone(timedelta(hours=9))
 QUERY = "SK이노베이션"
-MAX_PER_SOURCE = 10  # 필터링 후 줄어드므로 넉넉하게 수집
+MAX_PER_SOURCE = 20  # 필터링 후 줄어드므로 넉넉하게 수집
 
-
-EXCLUDE_KEYWORDS = ["SKC"]  # 제목에 이 키워드만 있고 SK이노베이션이 없으면 제외
 
 def _is_relevant(title: str) -> bool:
-    """관련 없는 기사 제외 (SK이노베이션 언급 없이 다른 SK계열사만 나오는 경우)"""
-    if "SK이노베이션" in title:
-        return True
-    for kw in EXCLUDE_KEYWORDS:
-        if kw in title:
-            return False
-    return True
+    """제목에 SK이노베이션이 포함된 기사만 통과"""
+    return "SK이노베이션" in title
 
 
 def _is_today(date_str: str) -> bool:
