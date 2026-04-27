@@ -18,10 +18,16 @@ QUERY = "SK이노베이션"
 MAX_PER_SOURCE = 10  # 필터링 후 줄어드므로 넉넉하게 수집
 
 
-def _is_relevant(title: str, summary: str = "") -> bool:
-    """SK이노베이션 관련 기사인지 확인 (제목 또는 본문 요약 기준)"""
-    text = title + " " + summary
-    return "SK이노베이션" in text or "skinnovation" in text.lower()
+EXCLUDE_KEYWORDS = ["SKC"]  # 제목에 이 키워드만 있고 SK이노베이션이 없으면 제외
+
+def _is_relevant(title: str) -> bool:
+    """관련 없는 기사 제외 (SK이노베이션 언급 없이 다른 SK계열사만 나오는 경우)"""
+    if "SK이노베이션" in title:
+        return True
+    for kw in EXCLUDE_KEYWORDS:
+        if kw in title:
+            return False
+    return True
 
 
 def _is_today(date_str: str) -> bool:
@@ -47,8 +53,7 @@ def fetch_google_news() -> list[dict]:
     for entry in feed.entries[:MAX_PER_SOURCE]:
         published = entry.get("published", "")
         title = entry.get("title", "").strip()
-        summary = entry.get("summary", "")
-        if not _is_today(published) or not _is_relevant(title, summary):
+        if not _is_today(published) or not _is_relevant(title):
             continue
         results.append({
             "title": title,
@@ -79,8 +84,7 @@ def fetch_naver_news() -> list[dict]:
     results = []
     for item in resp.json().get("items", []):
         title = BeautifulSoup(item.get("title", ""), "html.parser").get_text()
-        summary = BeautifulSoup(item.get("description", ""), "html.parser").get_text()
-        if not _is_today(item.get("pubDate", "")) or not _is_relevant(title, summary):
+        if not _is_today(item.get("pubDate", "")) or not _is_relevant(title):
             continue
         results.append({
             "title": title.strip(),
