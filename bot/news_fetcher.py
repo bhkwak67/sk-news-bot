@@ -18,6 +18,11 @@ QUERY = "SK이노베이션"
 MAX_PER_SOURCE = 10  # 필터링 후 줄어드므로 넉넉하게 수집
 
 
+def _is_relevant(title: str) -> bool:
+    """SK이노베이션 관련 기사인지 확인 (제목 기준)"""
+    return "SK이노베이션" in title
+
+
 def _is_today(date_str: str) -> bool:
     """날짜 문자열이 오늘(KST 기준)인지 확인"""
     if not date_str:
@@ -40,10 +45,11 @@ def fetch_google_news() -> list[dict]:
     results = []
     for entry in feed.entries[:MAX_PER_SOURCE]:
         published = entry.get("published", "")
-        if not _is_today(published):
+        title = entry.get("title", "").strip()
+        if not _is_today(published) or not _is_relevant(title):
             continue
         results.append({
-            "title": entry.get("title", "").strip(),
+            "title": title,
             "link": entry.get("link", ""),
             "source": "Google News",
         })
@@ -70,9 +76,9 @@ def fetch_naver_news() -> list[dict]:
 
     results = []
     for item in resp.json().get("items", []):
-        if not _is_today(item.get("pubDate", "")):
-            continue
         title = BeautifulSoup(item.get("title", ""), "html.parser").get_text()
+        if not _is_today(item.get("pubDate", "")) or not _is_relevant(title):
+            continue
         results.append({
             "title": title.strip(),
             "link": item.get("originallink") or item.get("link", ""),
