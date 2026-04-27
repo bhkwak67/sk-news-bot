@@ -1,0 +1,32 @@
+name: SK Innovation News Bot
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 매일 23:00 UTC = 08:00 KST
+  workflow_dispatch:         # GitHub UI에서 수동 실행 가능
+
+jobs:
+  send-news:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run news bot
+        working-directory: bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}           # 선택
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}   # 선택
+        run: python main.py
