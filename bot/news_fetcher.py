@@ -11,10 +11,22 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
+from email.utils import parsedate_to_datetime
 
 KST = timezone(timedelta(hours=9))
 QUERY = "SK이노베이션"
-MAX_PER_SOURCE = 5
+MAX_PER_SOURCE = 10  # 필터링 후 줄어드므로 넉넉하게 수집
+
+
+def _is_today(date_str: str) -> bool:
+    """날짜 문자열이 오늘(KST 기준)인지 확인"""
+    if not date_str:
+        return True  # 날짜 없으면 일단 포함
+    try:
+        dt = parsedate_to_datetime(date_str).astimezone(KST)
+        return dt.date() == datetime.now(KST).date()
+    except Exception:
+        return True
 
 
 # ── 1. Google News RSS ───────────────────────────────────────────────────────
@@ -27,6 +39,9 @@ def fetch_google_news() -> list[dict]:
     feed = feedparser.parse(url)
     results = []
     for entry in feed.entries[:MAX_PER_SOURCE]:
+        published = entry.get("published", "")
+        if not _is_today(published):
+            continue
         results.append({
             "title": entry.get("title", "").strip(),
             "link": entry.get("link", ""),
@@ -55,7 +70,8 @@ def fetch_naver_news() -> list[dict]:
 
     results = []
     for item in resp.json().get("items", []):
-        # HTML 태그 제거
+        if not _is_today(item.get("pubDate", "")):
+            continue
         title = BeautifulSoup(item.get("title", ""), "html.parser").get_text()
         results.append({
             "title": title.strip(),
