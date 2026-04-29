@@ -19,13 +19,14 @@ MAX_PER_SOURCE = 20  # 필터링 후 줄어드므로 넉넉하게 수집
 
 
 
-def _is_today(date_str: str) -> bool:
-    """날짜 문자열이 오늘(KST 기준)인지 확인"""
+def _is_yesterday(date_str: str) -> bool:
+    """날짜 문자열이 어제(KST 기준)인지 확인"""
     if not date_str:
         return True  # 날짜 없으면 일단 포함
     try:
         dt = parsedate_to_datetime(date_str).astimezone(KST)
-        return dt.date() == datetime.now(KST).date()
+        yesterday = (datetime.now(KST) - timedelta(days=1)).date()
+        return dt.date() == yesterday
     except Exception:
         return True
 
@@ -42,7 +43,7 @@ def fetch_google_news() -> list[dict]:
     for entry in feed.entries[:MAX_PER_SOURCE]:
         published = entry.get("published", "")
         title = entry.get("title", "").strip()
-        if not _is_today(published):
+        if not _is_yesterday(published):
             continue
         results.append({
             "title": title,
@@ -73,7 +74,7 @@ def fetch_naver_news() -> list[dict]:
     results = []
     for item in resp.json().get("items", []):
         title = BeautifulSoup(item.get("title", ""), "html.parser").get_text()
-        if not _is_today(item.get("pubDate", "")):
+        if not _is_yesterday(item.get("pubDate", "")):
             continue
         results.append({
             "title": title.strip(),

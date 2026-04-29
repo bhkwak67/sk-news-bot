@@ -21,8 +21,8 @@ def _get_credentials() -> tuple[str, str]:
 
 
 def _build_message(news_items: list[dict]) -> str:
-    today = datetime.now(KST).strftime("%Y년 %m월 %d일 (%a)")
-    lines = [f"📰 *SK이노베이션 뉴스* — {today}\n"]
+    yesterday = (datetime.now(KST) - timedelta(days=1)).strftime("%Y년 %m월 %d일 (%a)")
+    lines = [f"📰 *SK이노베이션 뉴스* — {yesterday}\n"]
 
     if not news_items:
         lines.append("오늘은 새로운 뉴스가 없습니다.")
